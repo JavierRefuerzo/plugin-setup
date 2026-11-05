@@ -1,0 +1,93 @@
+
+
+------
+That works if mock_devices_plugin.git is a bare Git repository on your Mac. Git push/pull transfers committed Git history and files—no rsync exclusions are needed.
+
+1. On your Mac, verify it’s bare and check your branch:
+
+git --git-dir=/Users/javierrefuerzo/development/plugins/mock_devices_plugin.git rev-parse --is-bare-repository
+
+cd /Users/javierrefuerzo/development/plugins/plugin_mock_devices
+git branch --show-current
+git status
+
+
+The first command should print true. Commit the changes you want to transfer; git push won’t include uncommitted changes. Be sure not to add credentials or local-only files.
+
+2. Add the bare repo as a remote and push from your project checkout:
+
+git remote add macrepo /Users/javierrefuerzo/development/plugins/mock_devices_plugin.git
+git push macrepo HEAD
+
+
+If macrepo is already configured, use git remote set-url macrepo /Users/javierrefuerzo/development/plugins/mock_devices_plugin.git instead. Note the branch name printed by git branch --show-current.
+
+3. On the controller, pull from your Mac over SSH. First enable Remote Login on your Mac and make sure the controller can reach it. Then, on the controller, if ~/projects/mock_devices is already a Git checkout:
+
+cd ~/projects/mock_devices
+git remote add macrepo ssh://javierrefuerzo@MAC_IP/Users/javierrefuerzo/development/plugins/mock_devices_plugin.git
+git fetch macrepo
+git pull --ff-only macrepo BRANCH
+
+
+Replace MAC_IP with your Mac’s LAN IP and BRANCH with the branch name from step 1. If the macrepo remote already exists in that checkout, update it with git remote set-url macrepo ... rather than adding it again.
+
+If ~/projects/mock_devices is not a Git checkout, clone instead—but only if the directory is empty or doesn’t exist:
+
+
+Don’t force-push if Git reports a history conflict; inspect the branch and remote state first.
+
+
+-------.env-------
+
+
+Yes. The log points to the cause: the plugin is using an outdated udi_interface from /home/admin/.local/lib/python3.11/site-packages/udi_interface. Its MQTT TLS handshake fails, so the profile update times out. This happens before the new node code runs.
+
+The project’s main.py is designed to use a plugin-local .venv when one exists. On the controller, SSH in and check the deployed directory:
+
+cd ~/projects/plugin_mock_devices
+ls -l .venv/bin/python3
+
+
+If that file is missing, create the venv and install this project’s requirements there:
+
+python3 -m venv .venv
+.venv/bin/python3 -m pip install -r requirements.txt
+
+
+Then verify the imported library comes from that venv:
+
+.venv/bin/python3 -c 'import udi_interface; print(udi_interface.__file__)'
+
+
+The path should be under ~/projects/plugin_mock_devices/.venv/, not /home/admin/.local/. Restart the plugin through its normal controller interface and check the log again.
+
+If .venv/bin/python3 already exists, confirm it’s executable and run the verification command above. Also make sure the controller is launching the main.py at ~/projects/plugin_mock_devices/main.py, as shown in the log.
+
+
+
+------------zip------------------
+
+To build an archive with the plugin files at the archive root, run this from the project directory:
+
+
+From the project directory, this creates a root-level archive containing tracked files plus unignored, untracked files, while excluding versions/:
+
+cd /Users/javierrefuerzo/development/plugins/plugin_mock_devices
+git ls-files --cached --others --exclude-standard \
+  | awk 'index($0, "versions/") != 1' \
+  | zip -q ../plugin_mock_devices.zip -@
+
+
+Git filters out ignored files and .git itself; the awk filter omits versions/. The command writes the archive one directory above the repo, so it won’t include itself. Check its contents with:
+
+unzip -Z1 ../plugin_mock_devices.zip | head -30
+
+
+This does include uncommitted, non-ignored files. If you want only committed files, use git archive --format=zip -o ../plugin_mock_devices.zip HEAD—but that won’t include uncommitted changes.
+
+
+
+
+
+
