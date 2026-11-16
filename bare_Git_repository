@@ -1,11 +1,20 @@
 
 
+------CREATE A BARE REPO (one time)------
+
+To create a new bare repo (e.g. for another plugin project):
+
+cd /Users/javierrefuerzo/development/plugins
+git init --bare my_plugin.git
+
+This creates /Users/javierrefuerzo/development/plugins/my_plugin.git as a bare repository with no working tree. Replace my_plugin with your project name.
+
 ------
-That works if mock_devices_plugin.git is a bare Git repository on your Mac. Git push/pull transfers committed Git history and files—no rsync exclusions are needed.
+That works ifmy_plugin.git is a bare Git repository on your Mac. Git push/pull transfers committed Git history and files—no rsync exclusions are needed.
 
 1. On your Mac, verify it’s bare and check your branch:
 
-git --git-dir=/Users/javierrefuerzo/development/plugins/mock_devices_plugin.git rev-parse --is-bare-repository
+git --git-dir=/Users/javierrefuerzo/development/plugins/my_plugin.git rev-parse --is-bare-repository
 
 cd /Users/javierrefuerzo/development/plugins/plugin_mock_devices
 git branch --show-current
@@ -28,6 +37,10 @@ cd ~/projects/mock_devices
 git remote add macrepo ssh://javierrefuerzo@MAC_IP/Users/javierrefuerzo/development/plugins/mock_devices_plugin.git
 git fetch macrepo
 git pull --ff-only macrepo BRANCH
+***Or git all
+
+//To push
+ git push -u macrepo main
 
 
 Replace MAC_IP with your Mac’s LAN IP and BRANCH with the branch name from step 1. If the macrepo remote already exists in that checkout, update it with git remote set-url macrepo ... rather than adding it again.
