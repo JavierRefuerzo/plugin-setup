@@ -41,7 +41,8 @@ git pull --ff-only macrepo BRANCH
 
 //To push
  git push -u macrepo main
-
+//To Clone on same machine
+ git clone mock_devices_plugin.git
 
 Replace MAC_IP with your Mac’s LAN IP and BRANCH with the branch name from step 1. If the macrepo remote already exists in that checkout, update it with git remote set-url macrepo ... rather than adding it again.
 
